@@ -43,6 +43,7 @@ String IntegratedPSSM3::Type = "SGX_IntegratedPSSM3";
 //-----------------------------------------------------------------------
 IntegratedPSSM3::IntegratedPSSM3()
 {
+    mPCFxSamples = 2;
     mUseTextureCompare = false;
     mUseColourShadows = false;
     mDebug = false;
@@ -73,6 +74,7 @@ void IntegratedPSSM3::updateGpuProgramsParams(Renderable* rend, const Pass* pass
     {
         vSplitPoints[i] = mShadowTextureParamsList[i].mMaxRange;
     }
+    vSplitPoints[3] = mShadowTextureParamsList.back().mMaxRange;
 
     mPSSplitPoints->setGpuParameter(vSplitPoints);
 
@@ -83,6 +85,7 @@ void IntegratedPSSM3::copyFrom(const SubRenderState& rhs)
 {
     const IntegratedPSSM3& rhsPssm= static_cast<const IntegratedPSSM3&>(rhs);
 
+    mPCFxSamples = rhsPssm.mPCFxSamples;
     mUseTextureCompare = rhsPssm.mUseTextureCompare;
     mUseColourShadows = rhsPssm.mUseColourShadows;
     mDebug = rhsPssm.mDebug;
@@ -148,6 +151,25 @@ void IntegratedPSSM3::setSplitPoints(const SplitPointList& newSplitPoints)
     {
         mShadowTextureParamsList[i - 1].mMaxRange = newSplitPoints[i];
     }
+}
+
+bool IntegratedPSSM3::setParameter(const String& name, const String& value)
+{
+    if(name == "debug")
+    {
+        return StringConverter::parse(value, mDebug);
+    }
+    else if (name == "filter")
+    {
+        if(value == "pcf4")
+            mPCFxSamples = 2;
+        else if(value == "pcf16")
+            mPCFxSamples = 4;
+        else
+            return false;
+    }
+
+    return false;
 }
 
 //-----------------------------------------------------------------------
@@ -231,7 +253,7 @@ bool IntegratedPSSM3::resolveDependencies(ProgramSet* programSet)
     psProgram->addDependency(SGX_LIB_INTEGRATEDPSSM);
 
     psProgram->addPreprocessorDefines(
-        StringUtil::format("PSSM_NUM_SPLITS=%zu", mShadowTextureParamsList.size()));
+        StringUtil::format("PSSM_NUM_SPLITS=%zu,PCF_XSAMPLES=%.1f", mShadowTextureParamsList.size(), mPCFxSamples));
 
     if(mDebug)
         psProgram->addPreprocessorDefines("DEBUG_PSSM");

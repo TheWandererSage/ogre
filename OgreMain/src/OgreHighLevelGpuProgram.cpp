@@ -47,12 +47,25 @@ namespace Ogre
     };
     static CmdPreprocessorDefines msCmdPreprocessorDefines;
 
+    /// Command object for setting entry point
+    class CmdEntryPoint : public ParamCommand
+    {
+    public:
+        String doGet(const void* target) const
+        {
+            return static_cast<const HighLevelGpuProgram*>(target)->getEntryPoint();
+        }
+        void doSet(void* target, const String& val) { static_cast<HighLevelGpuProgram*>(target)->setEntryPoint(val); }
+    };
+    static CmdEntryPoint msCmdEntryPoint;
+
     void HighLevelGpuProgram::setupBaseParamDictionary()
     {
         GpuProgram::setupBaseParamDictionary();
         ParamDictionary* dict = getParamDictionary();
 
-        dict->addParameter(ParameterDef("preprocessor_defines", "", PT_STRING), &msCmdPreprocessorDefines);
+        dict->addParameter("preprocessor_defines", &msCmdPreprocessorDefines);
+        dict->addParameter("entry_point", &msCmdEntryPoint);
     }
 
     //---------------------------------------------------------------------------
@@ -60,7 +73,7 @@ namespace Ogre
         const String& name, ResourceHandle handle, const String& group, 
         bool isManual, ManualResourceLoader* loader)
         : GpuProgram(creator, name, handle, group, isManual, loader), 
-        mHighLevelLoaded(false), mConstantDefsBuilt(false), mAssemblerProgram()
+        mHighLevelLoaded(false), mConstantDefsBuilt(false), mEntryPoint("main")
     {
     }
     //---------------------------------------------------------------------------
@@ -342,7 +355,7 @@ namespace Ogre
             if (newLineBefore != String::npos && newLineBefore >= startMarker)
                 outSource.append(inSource.substr(startMarker, newLineBefore-startMarker+1));
 
-            // Count the line number of #include statement, account for new line after the statement
+            // Count the line number of #include statement, +1 for new line after the statement
             size_t lineCount = std::count(inSource.begin(), inSource.begin() + newLineAfter, '\n') + 1;
 
             // use include filename if supported (cg) - else use include line as id (glsl)
@@ -354,8 +367,9 @@ namespace Ogre
             // recurse into include
             outSource.append(_resolveIncludes(resource->getAsString(), resourceBeingLoaded, filename, supportsFilename));
 
-            // Add #line to the end of the included file to correct the line count
-            outSource.append("\n#line " + std::to_string(lineCount) + lineFilename);
+            // Add #line to the end of the included file to correct the line count.
+            // +1 as #line specifies the number of the following line
+            outSource.append("\n#line " + std::to_string(lineCount + 1) + lineFilename);
 
             startMarker = newLineAfter;
 

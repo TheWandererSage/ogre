@@ -506,7 +506,8 @@ namespace Ogre {
         Particle* pParticle;
         ParticleEmitter* pParticleEmitter;
 
-        for (auto i = mActiveParticles.begin(); i != mActiveParticles.end();)
+        auto iend = mActiveParticles.end();
+        for (auto i = mActiveParticles.begin(); i != iend;)
         {
             pParticle = static_cast<Particle*>(*i);
             if (pParticle->mTimeToLive < timeElapsed)
@@ -531,9 +532,8 @@ namespace Ogre {
                     removeFromActiveEmittedEmitters (pParticleEmitter);
                 }
 
-                // And erase from mActiveParticles
-                *i = mActiveParticles.back();
-                mActiveParticles.pop_back();
+                // And remove from mActiveParticles
+                *i = std::move(*(--iend));
             }
             else
             {
@@ -541,8 +541,9 @@ namespace Ogre {
                 pParticle->mTimeToLive -= timeElapsed;
                 ++i;
             }
-
         }
+
+        mActiveParticles.erase(iend, mActiveParticles.end());
     }
     //-----------------------------------------------------------------------
     void ParticleSystem::_triggerEmitters(Real timeElapsed)
@@ -1276,26 +1277,19 @@ namespace Ogre {
         for (ParticleEmitter* emitter : mEmitters)
         {
             // Determine the names of all emitters that are emitted
-            if (emitter && !emitter->getEmittedEmitter().empty())
+            if (!emitter->getEmittedEmitter().empty())
             {
                 // This one will be emitted, register its name and leave the vector empty!
                 mEmittedEmitterPool[emitter->getEmittedEmitter()];
             }
+        }
 
-            // Determine whether the emitter itself will be emitted and set the 'mEmitted' attribute
-            for (ParticleEmitter* emitterInner : mEmitters)
+        // Determine whether the emitter itself will be emitted and set the 'mEmitted' attribute
+        for (ParticleEmitter* emitter : mEmitters)
+        {
+            if (mEmittedEmitterPool.find(emitter->getName()) != mEmittedEmitterPool.end())
             {
-                if (emitter && emitterInner && !emitter->getName().empty() &&
-                    emitter->getName() == emitterInner->getEmittedEmitter())
-                {
-                    emitter->setEmitted(true);
-                    break;
-                }
-                else if(emitter)
-                {
-                    // Set explicitly to 'false' although the default value is already 'false'
-                    emitter->setEmitted(false);
-                }
+                emitter->setEmitted(true);
             }
         }
 
@@ -1320,7 +1314,7 @@ namespace Ogre {
             // Search the correct emitter in the mEmitters vector
             for (ParticleEmitter* emitter : mEmitters)
             {
-                if (emitter && !name.empty() && name == emitter->getName())
+                if (name == emitter->getName())
                 {
                     // Found the right emitter, clone each emitter a number of times
                     size_t oldSize = e.size();
@@ -1331,8 +1325,7 @@ namespace Ogre {
                         clonedEmitter->setEmitted(emitter->isEmitted()); // is always 'true' by the way, but just in case
 
                         // Initially deactivate the emitted emitter if duration/repeat_delay are set
-                        if (clonedEmitter->getDuration() > 0.0f && 
-                            (clonedEmitter->getRepeatDelay() > 0.0f || clonedEmitter->getMinRepeatDelay() > 0.0f))
+                        if (clonedEmitter->getDuration() != 0.0f && clonedEmitter->getRepeatDelay() > 0.0f)
                             clonedEmitter->setEnabled(false);
 
                         // Add cloned emitters to the pool

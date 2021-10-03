@@ -309,11 +309,6 @@ bool SceneManager::hasLight(const String& name) const
     return hasMovableObject(name, LightFactory::FACTORY_TYPE_NAME);
 }
 //-----------------------------------------------------------------------
-void SceneManager::destroyLight(Light *l)
-{
-    destroyMovableObject(l);
-}
-//-----------------------------------------------------------------------
 void SceneManager::destroyLight(const String& name)
 {
     destroyMovableObject(name, LightFactory::FACTORY_TYPE_NAME);
@@ -461,12 +456,6 @@ bool SceneManager::hasEntity(const String& name) const
 }
 
 //-----------------------------------------------------------------------
-void SceneManager::destroyEntity(Entity *e)
-{
-    destroyMovableObject(e);
-}
-
-//-----------------------------------------------------------------------
 void SceneManager::destroyEntity(const String& name)
 {
     destroyMovableObject(name, EntityFactory::FACTORY_TYPE_NAME);
@@ -511,11 +500,6 @@ bool SceneManager::hasManualObject(const String& name) const
 
 }
 //-----------------------------------------------------------------------
-void SceneManager::destroyManualObject(ManualObject* obj)
-{
-    destroyMovableObject(obj);
-}
-//-----------------------------------------------------------------------
 void SceneManager::destroyManualObject(const String& name)
 {
     destroyMovableObject(name, ManualObjectFactory::FACTORY_TYPE_NAME);
@@ -524,6 +508,26 @@ void SceneManager::destroyManualObject(const String& name)
 void SceneManager::destroyAllManualObjects(void)
 {
     destroyAllMovableObjectsByType(ManualObjectFactory::FACTORY_TYPE_NAME);
+}
+Rectangle2D* SceneManager::createScreenSpaceRect(const String& name, bool includeTextureCoords)
+{
+    NameValuePairList params;
+    if(includeTextureCoords)
+        params["includeTextureCoords"] = "true";
+    return static_cast<Rectangle2D*>(createMovableObject(name, Rectangle2DFactory::FACTORY_TYPE_NAME, &params));
+}
+Rectangle2D* SceneManager::createScreenSpaceRect(bool includeTextureCoords)
+{
+    return createScreenSpaceRect(mMovableNameGenerator.generate(), includeTextureCoords);
+}
+
+bool SceneManager::hasScreenSpaceRect(const String& name) const
+{
+    return hasMovableObject(name, Rectangle2DFactory::FACTORY_TYPE_NAME);
+}
+Rectangle2D* SceneManager::getScreenSpaceRect(const String& name) const
+{
+    return static_cast<Rectangle2D*>(getMovableObject(name, Rectangle2DFactory::FACTORY_TYPE_NAME));
 }
 //-----------------------------------------------------------------------
 BillboardChain* SceneManager::createBillboardChain(const String& name)
@@ -548,12 +552,6 @@ BillboardChain* SceneManager::getBillboardChain(const String& name) const
 bool SceneManager::hasBillboardChain(const String& name) const
 {
     return hasMovableObject(name, BillboardChainFactory::FACTORY_TYPE_NAME);
-}
-
-//-----------------------------------------------------------------------
-void SceneManager::destroyBillboardChain(BillboardChain* obj)
-{
-    destroyMovableObject(obj);
 }
 //-----------------------------------------------------------------------
 void SceneManager::destroyBillboardChain(const String& name)
@@ -588,12 +586,6 @@ RibbonTrail* SceneManager::getRibbonTrail(const String& name) const
 bool SceneManager::hasRibbonTrail(const String& name) const
 {
     return hasMovableObject(name, RibbonTrailFactory::FACTORY_TYPE_NAME);
-}
-
-//-----------------------------------------------------------------------
-void SceneManager::destroyRibbonTrail(RibbonTrail* obj)
-{
-    destroyMovableObject(obj);
 }
 //-----------------------------------------------------------------------
 void SceneManager::destroyRibbonTrail(const String& name)
@@ -646,12 +638,6 @@ ParticleSystem* SceneManager::getParticleSystem(const String& name) const
 bool SceneManager::hasParticleSystem(const String& name) const
 {
     return hasMovableObject(name, ParticleSystemFactory::FACTORY_TYPE_NAME);
-}
-
-//-----------------------------------------------------------------------
-void SceneManager::destroyParticleSystem(ParticleSystem* obj)
-{
-    destroyMovableObject(obj);
 }
 //-----------------------------------------------------------------------
 void SceneManager::destroyParticleSystem(const String& name)
@@ -2135,12 +2121,6 @@ BillboardSet* SceneManager::getBillboardSet(const String& name) const
 bool SceneManager::hasBillboardSet(const String& name) const
 {
     return hasMovableObject(name, BillboardSetFactory::FACTORY_TYPE_NAME);
-}
-
-//-----------------------------------------------------------------------
-void SceneManager::destroyBillboardSet(BillboardSet* set)
-{
-    destroyMovableObject(set);
 }
 //-----------------------------------------------------------------------
 void SceneManager::destroyBillboardSet(const String& name)

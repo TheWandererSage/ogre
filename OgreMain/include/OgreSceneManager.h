@@ -663,7 +663,7 @@ namespace Ogre {
             // Array defining shadow texture index in light list.
             std::vector<size_t> mShadowTextureIndexLightList;
 
-            std::unique_ptr<Rectangle2D> mFullScreenQuad;
+            Rectangle2D* mFullScreenQuad;
 
             ShadowTextureList mShadowTextures;
 
@@ -1249,13 +1249,10 @@ namespace Ogre {
             return l;
         }
 
-        /** Returns a pointer to the named Light which has previously been added to the scene.
-        @note Throws an exception if the named instance does not exist
-        */
+        /// @copydoc getMovableObject()
         virtual Light* getLight(const String& name) const;
 
-        /** Returns whether a light with the given name exists.
-        */
+        /// @copydoc hasMovableObject()
         virtual bool hasLight(const String& name) const;
 
         /** Retrieve a set of clipping planes for a given light. 
@@ -1272,17 +1269,14 @@ namespace Ogre {
         */
         virtual void invalidatePerFrameScissorRectCache();
 
-        /** Removes the named light from the scene and destroys it.
+        /** Removes the light from the scene and destroys it.
             @remarks
                 Any pointers held to this light after calling this method will be invalid.
         */
         virtual void destroyLight(const String& name);
 
-        /** Removes the light from the scene and destroys it based on a pointer.
-            @remarks
-                Any pointers held to this light after calling this method will be invalid.
-        */
-        virtual void destroyLight(Light* light);
+        /// @overload
+        void destroyLight(Light* light) { destroyMovableObject(light); }
         /** Removes and destroys all lights in the scene.
         */
         virtual void destroyAllLights(void);
@@ -1475,12 +1469,9 @@ namespace Ogre {
             @param ptype The prefab type.
         */
         Entity* createEntity(PrefabType ptype);
-        /** Retrieves a pointer to the named Entity. 
-        @note Throws an exception if the named instance does not exist
-        */
+        /// @copydoc getMovableObject()
         Entity* getEntity(const String& name) const;
-        /** Returns whether an entity with the given name exists.
-        */
+        /// @copydoc hasMovableObject()
         bool hasEntity(const String& name) const;
 
         /** Removes & destroys an Entity from the SceneManager.
@@ -1491,7 +1482,7 @@ namespace Ogre {
             @see
                 SceneManager::clearScene
         */
-        void destroyEntity(Entity* ent);
+        void destroyEntity(MovableObject* ent) { destroyMovableObject(ent); }
 
         /// @overload
         void destroyEntity(const String& name);
@@ -1520,22 +1511,35 @@ namespace Ogre {
         manually through a GL immediate-mode style interface, generating the name.
         */
         ManualObject* createManualObject();
-        /** Retrieves a pointer to the named ManualObject. 
-        @note Throws an exception if the named instance does not exist
-        */
+        /// @copydoc getMovableObject()
         ManualObject* getManualObject(const String& name) const;
-        /** Returns whether a manual object with the given name exists.
-        */
+        /// @copydoc hasMovableObject()
         bool hasManualObject(const String& name) const;
 
         /** Removes & destroys a ManualObject from the SceneManager.
         */
-        void destroyManualObject(ManualObject* obj);
+        void destroyManualObject(MovableObject* obj) {  destroyMovableObject(obj); }
         /// @overload
         void destroyManualObject(const String& name);
         /** Removes & destroys all ManualObjects from the SceneManager.
         */
         void destroyAllManualObjects(void);
+        /// @}
+
+        /// @name Screenspace Rectangles
+        /// @{
+        /** Creates a Rectangle2D that can be displayed for screen space effects or
+        showing a basic GUI.
+        @param name The name to be given to the object (must be unique).
+        @param includeTextureCoords whether to create texture coordinates
+        */
+        Rectangle2D* createScreenSpaceRect(const String& name, bool includeTextureCoords = false);
+        /// @overload
+        Rectangle2D* createScreenSpaceRect(bool includeTextureCoords = false);
+        /// @copydoc hasMovableObject()
+        bool hasScreenSpaceRect(const String& name) const;
+        /// @copydoc getMovableObject()
+        Rectangle2D* getScreenSpaceRect(const String& name) const;
         /// @}
 
         /// @name Billboard Chains
@@ -1550,17 +1554,14 @@ namespace Ogre {
         a linked chain of billboards, with a generated name.
         */
         BillboardChain* createBillboardChain();
-        /** Retrieves a pointer to the named BillboardChain. 
-        @note Throws an exception if the named instance does not exist
-        */
+        /// @copydoc getMovableObject()
         BillboardChain* getBillboardChain(const String& name) const;
-        /** Returns whether a billboard chain with the given name exists.
-        */
+        /// @copydoc hasMovableObject()
         bool hasBillboardChain(const String& name) const;
 
         /** Removes & destroys a BillboardChain from the SceneManager.
         */
-        void destroyBillboardChain(BillboardChain* obj);
+        void destroyBillboardChain(MovableObject* obj) { destroyMovableObject(obj); }
         /// @overload
         void destroyBillboardChain(const String& name);
         /** Removes & destroys all BillboardChains from the SceneManager.
@@ -1576,17 +1577,14 @@ namespace Ogre {
         a linked chain of billboards which follows one or more nodes, generating the name.
         */
         RibbonTrail* createRibbonTrail();
-        /** Retrieves a pointer to the named RibbonTrail. 
-        @note Throws an exception if the named instance does not exist
-        */
+        /// @copydoc getMovableObject()
         RibbonTrail* getRibbonTrail(const String& name) const;
-        /** Returns whether a ribbon trail with the given name exists.
-        */
+        /// @copydoc hasMovableObject()
         bool hasRibbonTrail(const String& name) const;
 
         /** Removes & destroys a RibbonTrail from the SceneManager.
         */
-        void destroyRibbonTrail(RibbonTrail* obj);
+        void destroyRibbonTrail(MovableObject* obj) { destroyMovableObject(obj); }
         /// @overload
         void destroyRibbonTrail(const String& name);
         /** Removes & destroys all RibbonTrails from the SceneManager.
@@ -1660,19 +1658,15 @@ namespace Ogre {
         */
         ParticleSystem* createParticleSystem(size_t quota = 500,
             const String& resourceGroup = ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
-        /** Retrieves a pointer to the named ParticleSystem. 
-        @note Throws an exception if the named instance does not exist
-        */
+        /// @copydoc getMovableObject()
         ParticleSystem* getParticleSystem(const String& name) const;
-        /** Returns whether a particle system with the given name exists.
-        */
+        /// @copydoc hasMovableObject()
         bool hasParticleSystem(const String& name) const;
 
         /** Removes & destroys a ParticleSystem from the SceneManager.
         */
-        void destroyParticleSystem(ParticleSystem* obj);
-        /** Removes & destroys a ParticleSystem from the SceneManager.
-        */
+        void destroyParticleSystem(MovableObject* obj) { destroyMovableObject(obj); }
+        /// @overload
         void destroyParticleSystem(const String& name);
         /** Removes & destroys all ParticleSystems from the SceneManager.
         */
@@ -2234,7 +2228,7 @@ namespace Ogre {
                 to a SceneNode. It may be safer to wait to clear the whole
                 scene. If you are unsure, use clearScene.
         */
-        void destroyBillboardSet(BillboardSet* set);
+        void destroyBillboardSet(MovableObject* set) { destroyMovableObject(set); }
 
         /// @overload
         void destroyBillboardSet(const String& name);
@@ -3223,11 +3217,11 @@ namespace Ogre {
         void destroyAllMovableObjectsByType(const String& typeName);
         /** Destroy all MovableObjects. */
         void destroyAllMovableObjects(void);
-        /** Get a reference to a previously created MovableObject. 
+        /** Get a reference to a previously created object instance
         @note Throws an exception if the named instance does not exist
         */
         MovableObject* getMovableObject(const String& name, const String& typeName) const;
-        /** Returns whether a movable object instance with the given name exists. */
+        /** Returns whether a object instance with the given name exists. */
         bool hasMovableObject(const String& name, const String& typeName) const;
         /** Get all MovableObect instances of a given type.
         @note
@@ -3529,7 +3523,7 @@ namespace Ogre {
         */
         virtual SceneManager* createInstance(const String& instanceName) = 0;
         /** Destroy an instance of a SceneManager. */
-        virtual void destroyInstance(SceneManager* instance) = 0;
+        virtual void destroyInstance(SceneManager* instance) { delete instance; }
 
     };
 

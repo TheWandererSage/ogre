@@ -40,6 +40,7 @@ THE SOFTWARE.
 #include "OgreRoot.h"
 #include "OgreViewport.h"
 #include "OgreFrustum.h"
+#include "OgreLogManager.h"
 #if !OGRE_NO_GLES2_CG_SUPPORT
 #include "OgreGLSLESCgProgramFactory.h"
 #endif
@@ -962,38 +963,19 @@ namespace Ogre {
         // face by glFrontFace anywhere.
 
         GLenum cullMode;
+        bool flip = flipFrontFace();
 
-        switch( mode )
+        switch (mode)
         {
-            case CULL_NONE:
-                mStateCacheManager->setDisabled(GL_CULL_FACE);
-                return;
-
-            default:
-            case CULL_CLOCKWISE:
-                if (mActiveRenderTarget &&
-                    ((mActiveRenderTarget->requiresTextureFlipping() && !mInvertVertexWinding) ||
-                     (!mActiveRenderTarget->requiresTextureFlipping() && mInvertVertexWinding)))
-                {
-                    cullMode = GL_FRONT;
-                }
-                else
-                {
-                    cullMode = GL_BACK;
-                }
-                break;
-            case CULL_ANTICLOCKWISE:
-                if (mActiveRenderTarget && 
-                    ((mActiveRenderTarget->requiresTextureFlipping() && !mInvertVertexWinding) ||
-                    (!mActiveRenderTarget->requiresTextureFlipping() && mInvertVertexWinding)))
-                {
-                    cullMode = GL_BACK;
-                }
-                else
-                {
-                    cullMode = GL_FRONT;
-                }
-                break;
+        case CULL_NONE:
+            mStateCacheManager->setDisabled(GL_CULL_FACE);
+            return;
+        case CULL_CLOCKWISE:
+            cullMode = flip ? GL_FRONT : GL_BACK;
+            break;
+        case CULL_ANTICLOCKWISE:
+            cullMode = flip ? GL_BACK : GL_FRONT;
+            break;
         }
 
         mStateCacheManager->setEnabled(GL_CULL_FACE);
@@ -1135,8 +1117,7 @@ namespace Ogre {
         {
             // NB: We should always treat CCW as front face for consistent with default
             // culling mode. Therefore, we must take care with two-sided stencil settings.
-            flip = (mInvertVertexWinding && !mActiveRenderTarget->requiresTextureFlipping()) ||
-                (!mInvertVertexWinding && mActiveRenderTarget->requiresTextureFlipping());
+            flip = flipFrontFace();
             // Back
             OGRE_CHECK_GL_ERROR(glStencilMaskSeparate(GL_BACK, state.writeMask));
             OGRE_CHECK_GL_ERROR(glStencilFuncSeparate(GL_BACK, compareOp, state.referenceValue, state.compareMask));

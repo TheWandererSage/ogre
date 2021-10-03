@@ -64,14 +64,7 @@ namespace Ogre
         
         // have to call this here reather than in Resource destructor
         // since calling virtual methods in base destructors causes crash
-        if (isLoaded())
-        {
-            unload(); 
-        }
-        else
-        {
-            freeInternalResources();
-        }               
+        unload();
 
         // Free memory allocated per device.
         DeviceToTextureResourcesIterator it = mMapDeviceToTextureResources.begin();
@@ -1212,7 +1205,7 @@ namespace Ogre
     {
         IDirect3DDevice9* d3d9Device = D3D9RenderSystem::getActiveD3D9Device();
         TextureResources* textureResources = getTextureResources(d3d9Device);
-        if (textureResources == NULL || textureResources->pBaseTex == NULL)
+        if ((!textureResources || !textureResources->pBaseTex) && isLoaded())
         {
             // FIXME
             // createTextureResources(d3d9Device);

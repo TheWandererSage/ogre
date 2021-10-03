@@ -33,6 +33,7 @@ THE SOFTWARE.
 #include "OgreRoot.h"
 #include "OgreBitwise.h"
 #include "OgreTextureManager.h"
+#include "OgreLogManager.h"
 
 namespace Ogre {
     GLES2Texture::GLES2Texture(ResourceManager* creator, const String& name,
@@ -47,14 +48,7 @@ namespace Ogre {
     {
         // have to call this here rather than in Resource destructor
         // since calling virtual methods in base destructors causes crash
-        if (isLoaded())
-        {
-            unload();
-        }
-        else
-        {
-            freeInternalResources();
-        }
+        unload();
     }
 
     GLenum GLES2Texture::getGLES2TextureTarget(void) const
