@@ -398,37 +398,42 @@ namespace Ogre
                 mLeft = monitorInfo.rcMonitor.left;             
                 
                 // need different ordering here
-
-                if (oldFullscreen)
+                if( !mIsExternal )
                 {
-                    // was previously fullscreen, just changing the resolution
-                    SetWindowPos(mHWnd, HWND_TOPMOST, mLeft, mTop, width, height, SWP_NOACTIVATE);
-                }
-                else
-                {
-                    SetWindowPos(mHWnd, HWND_TOPMOST, mLeft, mTop, width, height, SWP_NOACTIVATE);
-                    SetWindowLong(mHWnd, GWL_STYLE, getWindowStyle(mIsFullScreen));
-                    SetWindowPos(mHWnd, 0, 0,0, 0,0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+                    if( oldFullscreen )
+                    {
+                        // was previously fullscreen, just changing the resolution
+                        SetWindowPos( mHWnd, HWND_TOPMOST, mLeft, mTop, width, height, SWP_NOACTIVATE );
+                    }
+                    else
+                    {
+                        SetWindowPos( mHWnd, HWND_TOPMOST, mLeft, mTop, width, height, SWP_NOACTIVATE );
+                        SetWindowLong( mHWnd, GWL_STYLE, getWindowStyle( mIsFullScreen ) );
+                        SetWindowPos( mHWnd, 0, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED );
+                    }
                 }
             }
             else
             {
-                // Calculate window dimensions required
-                // to get the requested client area
-                unsigned int winWidth, winHeight;
-                winWidth = mWidth;
-                winHeight = mHeight;
-                
-                adjustWindow(mWidth, mHeight, &winWidth, &winHeight);
+                if( !mIsExternal )
+                {
+                    // Calculate window dimensions required
+                    // to get the requested client area
+                    unsigned int winWidth, winHeight;
+                    winWidth = mWidth;
+                    winHeight = mHeight;
 
-                SetWindowLong(mHWnd, GWL_STYLE, getWindowStyle(mIsFullScreen));
-                SetWindowPos(mHWnd, HWND_NOTOPMOST, 0, 0, winWidth, winHeight,
-                    SWP_DRAWFRAME | SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOACTIVATE);
-                // Note that we also set the position in the restoreLostDevice method
-                // via _finishSwitchingFullScreen
+                    adjustWindow( mWidth, mHeight, &winWidth, &winHeight );
 
-                // Update the current rect.
-                updateWindowRect();
+                    SetWindowLong( mHWnd, GWL_STYLE, getWindowStyle( mIsFullScreen ) );
+                    SetWindowPos( mHWnd, HWND_NOTOPMOST, 0, 0, winWidth, winHeight,
+                        SWP_DRAWFRAME | SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOACTIVATE );
+                    // Note that we also set the position in the restoreLostDevice method
+                    // via _finishSwitchingFullScreen
+
+                    // Update the current rect.
+                    updateWindowRect();
+                }
             }
                                 
             // Have to release & trigger device reset
@@ -455,6 +460,11 @@ namespace Ogre
 
     void D3D9RenderWindow::_finishSwitchingFullscreen()
     {       
+        if( mIsExternal )
+        {
+            return;
+        }
+
         if(mIsFullScreen)
         {
             // Need to reset the region on the window sometimes, when the 
@@ -700,12 +710,10 @@ namespace Ogre
     void D3D9RenderWindow::setVSyncEnabled(bool vsync)
     {
         mVSync = vsync;
-        if (!mIsExternal)
-        {
-            // we need to reset the device with new vsync params
-            // invalidate the window to trigger this
-            mDevice->invalidate(this);
-        }
+
+        // we need to reset the device with new vsync params
+        // invalidate the window to trigger this
+        mDevice->invalidate(this);
     }
 
     bool D3D9RenderWindow::isVSyncEnabled() const
@@ -803,13 +811,6 @@ namespace Ogre
     //-----------------------------------------------------------------------------
     void D3D9RenderWindow::_beginUpdate()
     {       
-        // External windows should update per frame
-        // since it dosen't get the window resize/move messages.
-        if (mIsExternal)
-        {       
-            updateWindowRect();
-        }
-
         if (mWidth == 0 || mHeight == 0)
         {
             mDeviceValid = false;
